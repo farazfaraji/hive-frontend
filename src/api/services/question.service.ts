@@ -1,5 +1,6 @@
 import { AxiosError } from 'axios'
 import axiosInstance from '../axios.config'
+import { LESSON_ENDPOINTS } from '../endpoints'
 
 export interface QuestionResponse {
   question: string
@@ -16,7 +17,7 @@ export interface AnswerResponse {
 export class QuestionService {
   static async getQuestion(): Promise<QuestionResponse> {
     try {
-      const response = await axiosInstance.get<QuestionResponse>('lesson/question')
+      const response = await axiosInstance.get<QuestionResponse>(LESSON_ENDPOINTS.QUESTION)
       return response.data
     } catch (error) {
       if (error instanceof AxiosError) {
@@ -28,7 +29,7 @@ export class QuestionService {
 
   static async submitAnswer(answer: string): Promise<AnswerResponse> {
     try {
-      const response = await axiosInstance.post<AnswerResponse>('lesson/answer', { answer })
+      const response = await axiosInstance.post<AnswerResponse>(LESSON_ENDPOINTS.ANSWER, { answer })
       return response.data
     } catch (error) {
       if (error instanceof AxiosError) {

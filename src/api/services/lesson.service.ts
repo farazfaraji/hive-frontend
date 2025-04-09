@@ -1,5 +1,6 @@
 import { AxiosError } from 'axios'
 import axiosInstance from '@/api/axios.config'
+import { LESSON_ENDPOINTS } from '../endpoints'
 
 export interface LessonGrammar {
   isDeleted: boolean
@@ -59,13 +60,11 @@ export interface LessonResponse {
 }
 
 class LessonService {
-  private readonly API_PATH = '/lesson'
-
   async getLesson(): Promise<LessonResponse> {
     try {
-      console.log('Fetching lesson from:', this.API_PATH) // Debug log
-      const response = await axiosInstance.get<LessonResponse>(this.API_PATH)
-      console.log('Raw API response:', response) // Debug log
+      console.log('Fetching lesson from:', LESSON_ENDPOINTS.BASE)
+      const response = await axiosInstance.get<LessonResponse>(LESSON_ENDPOINTS.BASE)
+      console.log('Raw API response:', response)
       if (!response.data) {
         throw new Error('No data received from the lesson API')
       }
@@ -85,7 +84,7 @@ class LessonService {
 
   async finishLesson(): Promise<{ status: string }> {
     try {
-      const response = await axiosInstance.post<{ status: string }>('lesson/finish-lesson')
+      const response = await axiosInstance.post<{ status: string }>(LESSON_ENDPOINTS.FINISH)
       return response.data
     } catch (error) {
       if (error instanceof AxiosError) {

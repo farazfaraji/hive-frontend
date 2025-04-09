@@ -1,7 +1,6 @@
 import { AxiosError } from 'axios'
 import axiosInstance from '@/api/axios.config'
-
-const API_URL = 'http://localhost:3000/v1/grammar'
+import { GRAMMAR_ENDPOINTS } from '../endpoints'
 
 export interface GrammarItem {
   isDeleted: boolean
@@ -25,7 +24,7 @@ export interface GrammarExamplesResponse {
 class GrammarService {
   async getGrammarList(): Promise<GrammarItem[]> {
     try {
-      const response = await axiosInstance.get(`${API_URL}/list`)
+      const response = await axiosInstance.get(GRAMMAR_ENDPOINTS.LIST)
       return response.data.data
     } catch (error) {
       if (error instanceof AxiosError) {
@@ -37,7 +36,7 @@ class GrammarService {
 
   async getGrammarDefinition(id: string): Promise<GrammarItem> {
     try {
-      const response = await axiosInstance.get(`${API_URL}/definition/${id}`)
+      const response = await axiosInstance.get(GRAMMAR_ENDPOINTS.DEFINITION(id))
       return response.data
     } catch (error) {
       if (error instanceof AxiosError) {
@@ -49,7 +48,7 @@ class GrammarService {
 
   async getGrammarExamples(id: string): Promise<GrammarExamplesResponse> {
     try {
-      const response = await axiosInstance.get(`${API_URL}/examples/${id}`)
+      const response = await axiosInstance.get(GRAMMAR_ENDPOINTS.EXAMPLES(id))
       return response.data
     } catch (error) {
       if (error instanceof AxiosError) {

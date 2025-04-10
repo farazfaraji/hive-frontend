@@ -59,6 +59,11 @@ export interface LessonResponse {
   exam: LessonExam
 }
 
+export interface ReadingCorrectionResponse {
+  advices: string[]
+  score: number
+}
+
 class LessonService {
   async getLesson(): Promise<LessonResponse> {
     try {
@@ -89,6 +94,23 @@ class LessonService {
     } catch (error) {
       if (error instanceof AxiosError) {
         throw new Error(error.response?.data?.message || 'Failed to finish lesson')
+      }
+      throw error
+    }
+  }
+
+  async submitReadingCorrection(answer: string): Promise<ReadingCorrectionResponse> {
+    try {
+      const response = await axiosInstance.post<ReadingCorrectionResponse>(
+        LESSON_ENDPOINTS.READING_CORRECTION,
+        {
+          answer,
+        },
+      )
+      return response.data
+    } catch (error) {
+      if (error instanceof AxiosError) {
+        throw new Error(error.response?.data?.message || 'Failed to submit reading correction')
       }
       throw error
     }

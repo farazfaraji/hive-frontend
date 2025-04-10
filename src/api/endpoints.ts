@@ -1,5 +1,3 @@
-import { API_CONFIG } from '@/config/api.config'
-
 export const AUTH_ENDPOINTS = {
   LOGIN: '/auth/login',
   REGISTER: '/auth/register',
@@ -31,4 +29,5 @@ export const LESSON_ENDPOINTS = {
   FINISH: '/lesson/finish-lesson',
   QUESTION: '/lesson/question',
   ANSWER: '/lesson/answer',
+  READING_CORRECTION: '/lesson/reading-correction',
 }

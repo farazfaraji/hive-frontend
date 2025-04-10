@@ -145,7 +145,21 @@
                   </v-alert>
                 </div>
                 <div v-else>
-                  <v-alert color="success" class="mb-4">
+                  <div v-if="lesson?.exam?.plan === 'reading' && !readingSubmitted">
+                    <v-card-title class="text-h5 mb-4 text-center">Reading Exam</v-card-title>
+                    <v-card-text>
+                      <v-textarea
+                        v-model="readingAnswer"
+                        label="Write a summary of the reading"
+                        :error="!!readingError"
+                        :error-messages="readingError"
+                        rows="4"
+                        auto-grow
+                        class="mb-4"
+                      ></v-textarea>
+                    </v-card-text>
+                  </div>
+                  <v-alert v-else color="success" class="mb-4">
                     Congratulations! You have completed the exam!
                   </v-alert>
                 </div>
@@ -153,6 +167,32 @@
             </v-card-text>
           </v-card-item>
         </div>
+
+        <!-- Reading Exam Results -->
+        <v-card-item v-if="lesson?.exam?.plan === 'reading' && readingResponse">
+          <v-card-title class="text-h5 mb-4 text-center">Reading Exam Results</v-card-title>
+          <v-card-text>
+            <v-alert
+              :color="readingResponse.score >= 70 ? 'success' : 'warning'"
+              class="mb-4"
+              variant="tonal"
+            >
+              <div class="d-flex align-center justify-center mb-2">
+                <v-icon size="large" class="mr-2">mdi-star</v-icon>
+                <span class="text-h4">{{ readingResponse.score }}%</span>
+              </div>
+              <v-divider class="my-4"></v-divider>
+              <div class="text-body-1">
+                <p class="font-weight-bold mb-2">Advices for Improvement:</p>
+                <ul>
+                  <li v-for="(advice, index) in readingResponse.advices" :key="index" class="mb-2">
+                    {{ advice }}
+                  </li>
+                </ul>
+              </div>
+            </v-alert>
+          </v-card-text>
+        </v-card-item>
 
         <!-- Dialogue Section -->
         <div v-else-if="currentStep === 3">
@@ -373,6 +413,12 @@ const showSimpleFeedback = ref(false)
 const choiceCorrect = ref(false)
 const simpleCorrect = ref(false)
 
+// Add these new refs in the script section
+const readingAnswer = ref('')
+const readingError = ref('')
+const readingResponse = ref<ReadingCorrectionResponse | null>(null)
+const readingSubmitted = ref(false)
+
 // Add watcher for currentStep
 watch(currentStep, (newStep) => {
   console.log('Current step changed to:', newStep)
@@ -548,7 +594,25 @@ const checkSimpleAnswer = () => {
   }
 }
 
-// Update the next button click handler
+// Add this new method in the script section
+const submitReadingAnswer = async () => {
+  if (!readingAnswer.value.trim()) {
+    readingError.value = 'Please write a summary'
+    return
+  }
+
+  try {
+    readingError.value = ''
+    const response = await lessonService.submitReadingCorrection(readingAnswer.value.trim())
+    readingResponse.value = response
+    readingSubmitted.value = true
+  } catch (err) {
+    console.error('Failed to submit reading answer:', err)
+    readingError.value = 'Failed to submit reading answer'
+  }
+}
+
+// Update the handleNext method
 const handleNext = () => {
   if (currentStep.value === 2) {
     if (examStep.value === 0) {
@@ -557,11 +621,16 @@ const handleNext = () => {
       checkChoiceAnswer()
     } else if (currentSimpleQuestion.value < lesson.value?.exam?.simple?.length) {
       checkSimpleAnswer()
+    } else if (lesson.value?.exam?.plan === 'reading' && !readingSubmitted.value) {
+      submitReadingAnswer()
     } else {
       currentStep.value++
       examStep.value = 0
       currentChoiceQuestion.value = 0
       currentSimpleQuestion.value = 0
+      readingSubmitted.value = false
+      readingResponse.value = null
+      readingAnswer.value = ''
     }
   } else {
     currentStep.value++

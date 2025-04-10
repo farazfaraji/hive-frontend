@@ -1,7 +1,7 @@
 import axios from 'axios'
 
-const axiosInstance = axios.create({
-  baseURL: 'http://localhost:3000/v1',
+const api = axios.create({
+  baseURL: import.meta.env.VITE_API_BASE_URL,
   timeout: 10000,
   headers: {
     'Content-Type': 'application/json',
@@ -9,7 +9,7 @@ const axiosInstance = axios.create({
 })
 
 // Add a request interceptor
-axiosInstance.interceptors.request.use(
+api.interceptors.request.use(
   (config) => {
     const token = localStorage.getItem('token')
     if (token) {
@@ -22,4 +22,4 @@ axiosInstance.interceptors.request.use(
   },
 )
 
-export default axiosInstance
+export default api

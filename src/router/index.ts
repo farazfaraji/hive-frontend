@@ -1,6 +1,7 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import LoginForm from '@/components/auth/LoginForm.vue'
 import DashboardView from '@/views/DashboardView.vue'
+import DefaultLayout from '@/layouts/DefaultLayout.vue'
 
 const routes = [
   {
@@ -18,14 +19,23 @@ const routes = [
     // this generates a separate chunk (About.[hash].js) for this route
     // which is lazy-loaded when the route is visited.
     component: () => import('../views/AboutView.vue'),
+    meta: {
+      requiresAuth: false,
+    },
   },
   {
     path: '/dashboard',
     name: 'Dashboard',
-    component: DashboardView,
+    component: DefaultLayout,
     meta: {
       requiresAuth: true,
     },
+    children: [
+      {
+        path: '',
+        component: DashboardView,
+      },
+    ],
   },
 ]
 

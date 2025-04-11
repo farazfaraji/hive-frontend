@@ -5,13 +5,9 @@ import { useRouter } from 'vue-router'
 
 const router = useRouter()
 
-const handleLogout = async () => {
-  try {
-    await AuthService.logout()
-    router.push('/')
-  } catch (error) {
-    console.error('Logout failed:', error)
-  }
+const handleLogout = () => {
+  AuthService.logout()
+  router.push('/')
 }
 </script>
 

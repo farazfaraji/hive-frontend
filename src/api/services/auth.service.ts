@@ -25,17 +25,8 @@ export class AuthService {
     }
   }
 
-  static async logout(): Promise<void> {
-    try {
-      await axiosInstance.post(AUTH_ENDPOINTS.LOGOUT)
-      // Clear token from localStorage
-      localStorage.removeItem('token')
-    } catch (error) {
-      if (error instanceof AxiosError) {
-        throw new Error(error.response?.data?.message || 'Logout failed')
-      }
-      throw error
-    }
+  static logout(): void {
+    localStorage.removeItem('token')
   }
 
   // Add other auth-related methods as needed

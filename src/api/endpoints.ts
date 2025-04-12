@@ -29,5 +29,5 @@ export const LESSON_ENDPOINTS = {
   FINISH: '/lesson/finish-lesson',
   QUESTION: '/lesson/question',
   ANSWER: '/lesson/answer',
-  READING_CORRECTION: '/lesson/reading-correction',
+  READING_CORRECTION: '/lesson/reading/correction',
 }

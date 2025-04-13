@@ -442,17 +442,13 @@ interface WordWithMenu {
   showMenu: boolean
 }
 
-const handleWordAdd = async (word: WordWithMenu) => {
+const handleWordAdd = async (word: { text: string }) => {
   try {
-    await addWordToList(word)
-    snackbarText.value = `'${word.text}' added to your word list`
-    snackbarColor.value = 'success'
-    showSnackbar.value = true
+    await WordService.addWord({ word: word.text })
+    showNotification(`'${word.text}' added to your word list`, 'success')
   } catch (err) {
     console.error('Failed to add word:', err)
-    snackbarText.value = 'Failed to add word'
-    snackbarColor.value = 'error'
-    showSnackbar.value = true
+    showNotification('Failed to add word', 'error')
   }
 }
 
@@ -470,7 +466,7 @@ const splitNewsIntoWords = computed(() => {
 const addWordToList = async (word: { word: string; loading?: boolean; added?: boolean }) => {
   try {
     word.loading = true
-    await WordService.addWord(word.word)
+    await WordService.addWord({ word: word.word })
     word.added = true
     showNotification(`'${word.word}' added to your word list`, 'success')
   } catch (error) {

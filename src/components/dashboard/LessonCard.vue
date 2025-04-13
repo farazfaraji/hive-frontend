@@ -332,8 +332,12 @@
                         color="primary"
                         variant="text"
                         icon="mdi-plus"
-                        @click.stop="addWord(word.word)"
-                      ></v-btn>
+                        :loading="word.loading"
+                        :disabled="word.added"
+                        @click.stop="addWordToList(word)"
+                      >
+                        <v-icon v-if="word.added">mdi-check</v-icon>
+                      </v-btn>
                     </div>
                   </v-expansion-panel-title>
                   <v-expansion-panel-text>
@@ -366,7 +370,7 @@
             color="primary"
             :loading="isFinishingLesson"
             @click="currentStep === 6 ? finishLesson() : handleNext()"
-            :disabled="currentStep > 6 || isFinishingLesson"
+            :disabled="isNextButtonDisabled"
           >
             {{ currentStep === 6 ? 'Finish' : 'Next' }}
             <v-icon end>{{ currentStep === 6 ? 'mdi-check' : 'mdi-arrow-right' }}</v-icon>
@@ -401,8 +405,8 @@ const answerError = ref('')
 const submitting = ref(false)
 const questionCount = ref(0)
 const isFinishingLesson = ref(false)
+const hasAnsweredCurrentQuestion = ref(false)
 
-// Add new refs for exam
 const examStep = ref(0)
 const currentChoiceQuestion = ref(0)
 const currentSimpleQuestion = ref(0)
@@ -413,13 +417,21 @@ const showSimpleFeedback = ref(false)
 const choiceCorrect = ref(false)
 const simpleCorrect = ref(false)
 
-// Add these new refs in the script section
 const readingAnswer = ref('')
 const readingError = ref('')
 const readingResponse = ref<ReadingCorrectionResponse | null>(null)
 const readingSubmitted = ref(false)
 
-// Add watcher for currentStep
+const isNextButtonDisabled = computed(() => {
+  if (currentStep.value > 6 || isFinishingLesson.value) return true
+  if (currentStep.value === 4 && !hasAnsweredCurrentQuestion.value) return true
+  if (currentStep.value === 2 && examStep.value === 1) {
+    if (showChoiceFeedback.value && choiceCorrect.value) return true
+    if (showSimpleFeedback.value && simpleCorrect.value) return true
+  }
+  return false
+})
+
 watch(currentStep, (newStep) => {
   console.log('Current step changed to:', newStep)
   console.log('Current lesson data:', lesson.value)
@@ -432,7 +444,7 @@ interface WordWithMenu {
 
 const handleWordAdd = async (word: WordWithMenu) => {
   try {
-    await addWordToList(word.text)
+    await addWordToList(word)
     snackbarText.value = `'${word.text}' added to your word list`
     snackbarColor.value = 'success'
     showSnackbar.value = true
@@ -446,7 +458,6 @@ const handleWordAdd = async (word: WordWithMenu) => {
 
 const splitNewsIntoWords = computed(() => {
   if (!lesson.value?.news?.news) return []
-  // Split by spaces and remove any empty strings
   return lesson.value.news.news
     .split(' ')
     .filter((word) => word.trim())
@@ -456,13 +467,17 @@ const splitNewsIntoWords = computed(() => {
     }))
 })
 
-const addWordToList = async (word: string) => {
+const addWordToList = async (word: { word: string; loading?: boolean; added?: boolean }) => {
   try {
-    await WordService.addWord(word)
-    // Optional: Add success notification
+    word.loading = true
+    await WordService.addWord(word.word)
+    word.added = true
+    showNotification(`'${word.word}' added to your word list`, 'success')
   } catch (error) {
     console.error('Failed to add word:', error)
-    // Optional: Add error notification
+    showNotification('Failed to add word', 'error')
+  } finally {
+    word.loading = false
   }
 }
 
@@ -483,14 +498,13 @@ const loadQuestion = async () => {
     answerError.value = ''
     userAnswer.value = ''
     answerResponse.value = null
+    hasAnsweredCurrentQuestion.value = false
 
     const response = await QuestionService.getQuestion()
     currentQuestion.value = response
   } catch (err) {
     console.error('Failed to load question:', err)
-    // Check if error is about maximum questions reached
     if (err instanceof Error && err.message.includes('maximum number of questions')) {
-      // Move to next section after a short delay
       setTimeout(() => {
         currentStep.value++
         questionCount.value = 0
@@ -512,17 +526,16 @@ const checkAnswer = async () => {
 
     const response = await QuestionService.submitAnswer(userAnswer.value.trim())
     answerResponse.value = response
+    hasAnsweredCurrentQuestion.value = true
 
     if (response.correct === 'yes') {
       questionCount.value++
       if (questionCount.value >= 3) {
-        // Move to next section after a short delay
         setTimeout(() => {
           currentStep.value++
           questionCount.value = 0
         }, 1500)
       } else {
-        // Load next question after a short delay
         setTimeout(loadQuestion, 1500)
       }
     }
@@ -534,7 +547,6 @@ const checkAnswer = async () => {
   }
 }
 
-// Watch for step changes to load question when entering Questions section
 watch(currentStep, (newStep) => {
   if (newStep === 4) {
     loadQuestion()
@@ -561,7 +573,6 @@ const finishLesson = async () => {
   }
 }
 
-// Add new methods for exam
 const checkChoiceAnswer = () => {
   if (!selectedChoice.value) return
 
@@ -574,7 +585,7 @@ const checkChoiceAnswer = () => {
       currentChoiceQuestion.value++
       selectedChoice.value = ''
       showChoiceFeedback.value = false
-    }, 1500)
+    }, 500)
   }
 }
 
@@ -582,7 +593,9 @@ const checkSimpleAnswer = () => {
   if (!selectedSimple.value) return
 
   const correctAnswer = lesson.value?.exam?.simple[currentSimpleQuestion.value].answer
-  simpleCorrect.value = selectedSimple.value === correctAnswer
+  const correctAnswerBool = correctAnswer === true || correctAnswer === 'true'
+  const selectedAnswer = selectedSimple.value === 'true'
+  simpleCorrect.value = selectedAnswer === correctAnswerBool
   showSimpleFeedback.value = true
 
   if (simpleCorrect.value) {
@@ -590,11 +603,10 @@ const checkSimpleAnswer = () => {
       currentSimpleQuestion.value++
       selectedSimple.value = ''
       showSimpleFeedback.value = false
-    }, 1500)
+    }, 500)
   }
 }
 
-// Add this new method in the script section
 const submitReadingAnswer = async () => {
   if (!readingAnswer.value.trim()) {
     readingError.value = 'Please write a summary'
@@ -612,15 +624,26 @@ const submitReadingAnswer = async () => {
   }
 }
 
-// Update the handleNext method
 const handleNext = () => {
   if (currentStep.value === 2) {
     if (examStep.value === 0) {
       examStep.value = 1
     } else if (currentChoiceQuestion.value < lesson.value?.exam?.choices?.length) {
-      checkChoiceAnswer()
+      if (showChoiceFeedback.value && !choiceCorrect.value) {
+        currentChoiceQuestion.value++
+        selectedChoice.value = ''
+        showChoiceFeedback.value = false
+      } else {
+        checkChoiceAnswer()
+      }
     } else if (currentSimpleQuestion.value < lesson.value?.exam?.simple?.length) {
-      checkSimpleAnswer()
+      if (showSimpleFeedback.value && !simpleCorrect.value) {
+        currentSimpleQuestion.value++
+        selectedSimple.value = ''
+        showSimpleFeedback.value = false
+      } else {
+        checkSimpleAnswer()
+      }
     } else if (lesson.value?.exam?.plan === 'reading' && !readingSubmitted.value) {
       submitReadingAnswer()
     } else {
@@ -639,7 +662,6 @@ const handleNext = () => {
 
 const splitExamTextIntoWords = computed(() => {
   if (!lesson.value?.exam?.text) return []
-  // Split by spaces and remove any empty strings
   return lesson.value.exam.text
     .split(' ')
     .filter((word) => word.trim())
@@ -652,11 +674,13 @@ const splitExamTextIntoWords = computed(() => {
 onMounted(async () => {
   try {
     const response = await lessonService.getLesson()
-    console.log('Lesson data received:', response) // More detailed debug log
-    if (response?.grammar) {
-      console.log('Grammar data:', response.grammar)
-    } else {
-      console.log('No grammar data in response')
+    // Initialize word states
+    if (response?.words) {
+      response.words = response.words.map((word) => ({
+        ...word,
+        loading: false,
+        added: false,
+      }))
     }
     lesson.value = response
   } catch (error: Error | unknown) {

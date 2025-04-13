@@ -444,7 +444,7 @@ interface WordWithMenu {
 
 const handleWordAdd = async (word: { text: string }) => {
   try {
-    await WordService.addWord({ word: word.text })
+    await WordService.addWord(word.text)
     showNotification(`'${word.text}' added to your word list`, 'success')
   } catch (err) {
     console.error('Failed to add word:', err)
@@ -466,7 +466,7 @@ const splitNewsIntoWords = computed(() => {
 const addWordToList = async (word: { word: string; loading?: boolean; added?: boolean }) => {
   try {
     word.loading = true
-    await WordService.addWord({ word: word.word })
+    await WordService.addWord(word.word)
     word.added = true
     showNotification(`'${word.word}' added to your word list`, 'success')
   } catch (error) {
